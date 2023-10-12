@@ -1,0 +1,42 @@
+<div class="h-100 d-flex flex-column justify-content-center">
+  <div class="d-flex justify-content-center">
+
+    <div class="p-4 d-flex flex-column align-items-center border border-secondary rounded">
+      <h1 class="text-center">Image Format Converter</h1>
+
+      <div>
+        Upload image: <input #input type=file accept=".webp,.png,.jpg,.gif" (change)="handleFileUploaded($event)">
+      <div>
+
+      <div [hidden]="!dataUrl">
+        <div>
+          <label>
+            Output format
+            <select #outputFormatSelect (change)="handleOutputFormatChanged($event)">
+              <option value="image/webp">WEBP</option>
+              <option value="image/png">PNG</option>
+              <option value="image/jpg">JPG</option>
+              <option value="image/gif">GIF</option>
+            </select>
+          </label>
+        </div>
+
+        <div>
+          Output file name: {{ fileName }}
+        </div>
+
+        <a #downloadLink *ngIf="dataUrl" target="_blank">
+          <button (click)="handleExportClicked()">Export</button>
+        </a>
+
+        <div>
+          Preview
+        </div>
+        <div class="previewImageContainer">
+          <img class="previewImage" [src]="dataUrl" />
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
