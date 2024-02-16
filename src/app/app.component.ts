@@ -1,5 +1,10 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
 
+interface ImageFile {
+  dataUrl: string;
+  fileName: string;
+}
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -7,23 +12,20 @@ import { Component, ElementRef, ViewChild } from '@angular/core';
 })
 export class AppComponent {
   @ViewChild('outputFormatSelect') private outputFormatSelect: ElementRef | undefined;
-  @ViewChild('downloadLink') private downloadLink: ElementRef | undefined;
 
-  public dataUrl: string | undefined;
-  public fileName: string | undefined;
-
-  private exportCanvas = document.createElement('canvas');
+  public imageFiles: ImageFile[] = [];
 
   async handleFileUploaded(event: Event): Promise<void> {
     const fileList = (event.target as HTMLInputElement).files;
     if (fileList) {
-      const file = fileList.item(0);
-      if (file) {
-        this.fileName = file.name;
-        const dataUrl = await this.getFileAsDataUrl(file);
-        this.dataUrl = dataUrl;
-        this.fileName = this.getOutputFileName(file, this.outputFormatSelect?.nativeElement.value);
-        await this.setCanvasImageDataUrl(this.exportCanvas, dataUrl);
+      this.imageFiles = [];
+      for (let fileIndex = 0; fileIndex < fileList.length; fileIndex++) {
+        const file = fileList.item(fileIndex);
+        if (file) {
+          const dataUrl = await this.getFileAsDataUrl(file);
+          const fileName = this.getOutputFileName(file, this.outputFormatSelect?.nativeElement.value);
+          this.imageFiles.push({ dataUrl, fileName });
+        }
       }
     }
   }
@@ -60,17 +62,35 @@ export class AppComponent {
     return splitName.join('.');
   }
 
+  getFileNames(imageFiles: ImageFile[]): string {
+    return imageFiles.map(({ fileName }) => fileName).join(', ');
+  }
+
   handleOutputFormatChanged(event: Event): void {
-    if (this.fileName) {
+    if (this.imageFiles.length > 0) {
       const outputFormat = (event.target as HTMLSelectElement).value;
-      this.fileName = this.getOutputFileName({ name: this.fileName }, outputFormat);
+      this.imageFiles = this.imageFiles.map(({ dataUrl, fileName }) => {
+        const newFileName = this.getOutputFileName({ name: fileName }, outputFormat);
+        return { dataUrl, fileName: newFileName };
+      });
     }
   }
 
-  handleExportClicked(): void {
+  async handleExportClicked(): Promise<void> {
     const outputFormat = this.outputFormatSelect?.nativeElement.value ?? 'image/webp';
-    const imageUrl = this.exportCanvas.toDataURL(outputFormat).replace(outputFormat, 'image/octet-stream');
-    this.downloadLink?.nativeElement.setAttribute('href', imageUrl);
-    this.downloadLink?.nativeElement.setAttribute('download', this.fileName);
+
+    await Promise.all(this.imageFiles.map(async ({ fileName, dataUrl }) => {
+      const exportCanvas = document.createElement('canvas');
+      await this.setCanvasImageDataUrl(exportCanvas, dataUrl);
+      const imageUrl = exportCanvas.toDataURL(outputFormat).replace(outputFormat, 'image/octet-stream');
+      exportCanvas.remove();
+
+      const temporaryDownloadLink = document.createElement("a");
+      temporaryDownloadLink.style.display = 'none';
+      temporaryDownloadLink.setAttribute('href', imageUrl);
+      temporaryDownloadLink.setAttribute('download', fileName);
+      temporaryDownloadLink.click();
+      temporaryDownloadLink.remove();
+    }));
   }
 }

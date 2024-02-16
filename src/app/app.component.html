@@ -5,10 +5,10 @@
       <h1 class="text-center">Image Format Converter</h1>
 
       <div>
-        Upload image: <input #input type=file accept=".webp,.png,.jpg,.gif" (change)="handleFileUploaded($event)">
+        Upload image(s): <input #input type=file accept=".webp,.png,.jpg,.gif" multiple (change)="handleFileUploaded($event)">
       <div>
 
-      <div [hidden]="!dataUrl">
+      <div [hidden]="imageFiles.length === 0">
         <div>
           <label>
             Output format
@@ -22,18 +22,18 @@
         </div>
 
         <div>
-          Output file name: {{ fileName }}
+          Output file name(s): {{ getFileNames(imageFiles) }}
         </div>
 
-        <a #downloadLink *ngIf="dataUrl" target="_blank">
+        <a *ngIf="imageFiles.length !== 0" target="_blank">
           <button (click)="handleExportClicked()">Export</button>
         </a>
 
         <div>
           Preview
         </div>
-        <div class="previewImageContainer">
-          <img class="previewImage" [src]="dataUrl" />
+        <div *ngFor="let imageFile of imageFiles" class="previewImageContainer">
+          <img class="previewImage" [src]="imageFile.dataUrl" />
         </div>
       </div>
     </div>
